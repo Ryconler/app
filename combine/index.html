@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组合</title>
+    </title>
+    <link rel="stylesheet" href="../plugin/element/element.css">
+    <link rel="stylesheet" href="../plugin/normalize/normalize.min.css">
+    <script src="../plugin/vue/vue.js"></script>
+    <script src="../plugin/element/element.js"></script>
+    <script src="../plugin/clipboard/clipboard.js"></script>
+    <style>
+        #app {
+            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+        }
+        .el-row {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-container>
+            <el-header>
+                <h1>生成多行多列内容的组合</h1>
+            </el-header>
+            <el-main>
+                <div v-for="(row, rowIndex) of tagData" :key="rowIndex">
+                    <el-tag v-for="(col, colIndex) of row.data" :key="colIndex" :type="tagTypes[rowIndex%5]" @click="onCloseTag(rowIndex, colIndex)">
+                        {{col}}
+                    </el-tag>
+                </div>
+                <el-row>
+                    <el-col v-for="i of inputs" :key="i">
+                        <el-input v-model.trim="inputData[i]" @keyup.enter.native="onClickAdd(i)">
+                            <el-button slot="append" @click="onClickAdd(i)" icon="el-icon-plus"></el-button>
+                        </el-input>
+                    </el-col>
+                </el-row>
+                <el-button v-show="tagData.length>0" @click="onClickGenerate" type="primary">生成数据</el-button>
+                <el-button v-show="result" id="clip-button" :data-clipboard-text="result" type="success">复制数据</el-button>
+                <p v-html="result" style="white-space: pre-wrap;"></p>
+            </el-main>
+        </el-container>
+    </div>
+</body>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            inputData: [],
+            tagData: [],
+            tagTypes: ["", "success", "info", "warning", "danger"],
+            result: "",
+            clip: null
+        },
+        computed: {
+            inputs() {
+                return [...new Array(this.tagData.length + 1).keys()];
+            }
+        },
+        mounted() {
+            this.clip = new ClipboardJS('#clip-button');
+            this.clip.on('success', (e) => {
+                this.$notify({
+                    title: '复制成功',
+                    type: 'success',
+                    position: 'bottom-right'
+                });
+            });
+        },
+        methods: {
+            onClickAdd(i) {
+                const inputValue = this.inputData[i];
+                if (!inputValue) {
+                    return;
+                }!this.tagData[i] && this.tagData.splice(i, 0, {
+                    data: []
+                });
+                this.tagData[i].data.push(inputValue);
+                this.$set(this.inputData, i, "");
+                console.log('this.tagData :>> ', this.tagData);
+            },
+            onCloseTag(rowIndex, colIndex) {
+                this.tagData[rowIndex].data.splice(colIndex, 1);
+                if (this.tagData[rowIndex].data.length === 0) {
+                    this.tagData.splice(rowIndex, 1);
+                }
+                console.log('this.tagData :>> ', this.tagData);
+            },
+            onClickGenerate() {
+                if (this.tagData.length === 0) {
+                    this.$notify({
+                        title: '请至少输入一组数据',
+                        type: 'warning',
+                        position: 'bottom-right'
+                    });
+                    return;
+                }
+                for (index in this.inputData) {
+                    this.$set(this.inputData, index, "");
+                }
+                let resultArr = [];
+                for (const row of this.tagData) {
+                    if (resultArr.length === 0) {
+                        resultArr = row.data.map(col => col + "  ");
+                    } else {
+                        const count = resultArr.length;
+                        for (let i = 0; i < count; i++) {
+                            for (const col of row.data) {
+                                resultArr.push(resultArr[i] + col + "  ");
+                            }
+                        }
+                        resultArr.splice(0, count);
+                    }
+                }
+                this.result = resultArr.join("\n");
+            }
+        },
+    })
+</script>
+
+</html>
