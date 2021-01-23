@@ -25,14 +25,14 @@
             </el-header>
             <el-main>
                 <el-row :gutter="20">
-                    <el-col :span="8" v-for="(app, index) in apps" :key="index">
+                    <el-col :span="8" v-for="(app, index) in apps" :key="index" style="margin-bottom: 20px;">
                         <el-card :body-style="{ padding: '0px' }">
-                            <el-link :href="app.url" :underline="false" target="_blank">
+                            <a :href="app.url" style="text-decoration: none;color: black;">
                                 <img :src="app.image" style="width: 100%;">
                                 <div style="padding: 14px;">
                                     <span>{{app.title}}</span>
                                 </div>
-                            </el-link>
+                            </a>
                         </el-card>
                     </el-col>
                 </el-row>
