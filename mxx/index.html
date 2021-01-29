@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我与木小先</title>
+    <link rel="stylesheet" href="../plugin/element/element.css">
+    <link rel="stylesheet" href="../plugin/normalize/normalize.min.css">
+    <script src="../plugin/vue/vue.js"></script>
+    <script src="../plugin/element/element.js"></script>
+    <script src="../utils/date-utils.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <p>相爱时间：{{formatDate(loveDate, "yyyy年MM月dd日")}}</p>
+        <p>现在时间：{{formatDate(nowDate, "yyyy年MM月dd日hh时mm分ss秒")}}</p>
+        <p>已经相爱：{{lasts.year}}年{{lasts.month}}月{{lasts.day}}天{{lasts.hour}}时{{lasts.minute}}分{{lasts.second}}秒 共计：{{totalDays}}天</p>
+
+    </div>
+
+</body>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            loveDate: new Date(),
+            nowDate: new Date(),
+        },
+        computed: {
+            totalDays() {
+                return DateUtils.getDaysBetween(this.loveDate, this.nowDate);
+            },
+            lasts() {
+                return DateUtils.getDiffsBetween(this.loveDate, this.nowDate);
+            }
+        },
+        created() {
+            // 2016-11-08 00:00:00
+            this.loveDate = DateUtils.parseDate("2016-11-08", "yyyy-MM-dd");
+            setInterval(() => {
+                this.nowDate = new Date();
+            }, 1000);
+        },
+        methods: {
+            formatDate(date, formatStr) {
+                return DateUtils.formatDate(date, formatStr);
+            },
+        }
+    })
+</script>
+
+</html>
