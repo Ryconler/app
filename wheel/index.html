@@ -294,7 +294,12 @@
                                 });
                             }
                         }
-                        window.localStorage.setItem("prizeList", JSON.stringify(prizeList));
+                        try{
+                            window.localStorage.setItem("prizeList", JSON.stringify(prizeList));
+                        }catch(e){
+                            alert("图片太大，无法本地存储，请更换图片");
+                            return;
+                        }
                         this.getPrizeList();
                         this.initAngleList();
                         this.showDialog = false
@@ -313,6 +318,7 @@
                         fileReader.readAsDataURL(fileObj.raw);
                     } catch (e) {
                         callback && callback(fileObj.url)
+                        alert(e);
                     }
                 } else {
                     callback && callback(fileObj.url)
