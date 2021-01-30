@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>转盘抽奖</title>
     <link rel="stylesheet" href="../plugin/element/element.css">
     <link rel="stylesheet" href="../plugin/normalize/normalize.min.css">
@@ -24,7 +24,7 @@
 <body>
     <div id="app">
         <div class="operate">
-            <el-button type="danger" icon="el-icon-goods" circle @click="showDialog=true;" style="width: 80px;height: 80px;font-size: 50px;"></el-button>
+            <el-button type="danger" icon="el-icon-goods" circle @click="showDialog=true;"></el-button>
         </div>
 
         <div class="title">
@@ -47,7 +47,7 @@
         <div class="toast" v-show="currentPrize">
             <div class="toast-container">
                 <img :src="toastIcon" class="toast-picture" />
-                <div class="close" @click="closeToast()"></div>
+                <div class="toast-close" @click="closeToast()"></div>
                 <div class="toast-title">{{toastTitle}}</div>
                 <div class="toast-btn">
                     <div class="toast-cancel" @click="closeToast">关闭</div>
@@ -263,7 +263,6 @@
                 this.$set(this.formData.prizes[index], "fileList", []);
             },
             onConfirmClick() {
-                this.prizeList = [];
                 const prizes = this.formData.prizes;
                 const urls = [];
                 for (let i = 0; i < 8; i++) {
@@ -279,22 +278,24 @@
                 const t = setInterval(() => {
                     if (!urls.includes(undefined)) {
                         clearInterval(t);
+                        const prizeList = [];
                         for (let i = 0; i < 8; i++) {
                             if (prizes[i] && prizes[i].name) {
-                                this.$set(this.prizeList, i, {
+                                prizeList.push({
                                     name: prizes[i].name,
                                     icon: urls[i],
                                     isPrize: true
-                                })
+                                });
                             } else {
-                                this.$set(this.prizeList, i, {
+                                prizeList.push({
                                     name: "谢谢参与",
                                     icon: urls[i],
                                     isPrize: false
-                                })
+                                });
                             }
                         }
-                        window.localStorage.setItem("prizeList", JSON.stringify(this.prizeList));
+                        window.localStorage.setItem("prizeList", JSON.stringify(prizeList));
+                        this.getPrizeList();
                         this.initAngleList();
                         this.showDialog = false
                     }
