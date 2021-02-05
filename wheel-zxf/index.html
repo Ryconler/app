@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>转盘抽奖</title>
+    <link rel="stylesheet" href="../plugin/element/element.css">
+    <link rel="stylesheet" href="../plugin/normalize/normalize.min.css">
+    <link rel="stylesheet" href="./index.css">
+    <script src="../plugin/vue/vue.js"></script>
+    <script src="../plugin/element/element.js"></script>
+
+    <style>
+        .el-upload--picture-card,
+        .el-upload-list__item {
+            width: 80px !important;
+            height: 80px !important;
+            line-height: 80px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="operate">
+            <el-button type="danger" icon="el-icon-goods" circle @click="showDialog=true;"></el-button>
+        </div>
+
+        <div class="title">
+            <img src="./img/lucky_title.png" alt="幸运大转盘">
+        </div>
+
+        <div class="wheel">
+            <div class="wheel-main" :style="rotateStyle">
+                <div class="prize-list">
+                    <div class="prize-item" v-for="(item,index) in prizeList" :key="index" :style="item.style">
+                        <img class="prize-pic" :src="item.icon" />
+                        <div class="prize-name">{{item.name}}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="wheel-pointer" @click="beginRotate()"></div>
+        </div>
+
+        <div class="toast-mask" v-show="currentPrize"></div>
+        <div class="toast" v-show="currentPrize">
+            <div class="toast-container">
+                <img :src="toastIcon" class="toast-picture" />
+                <div class="toast-close" @click="closeToast()"></div>
+                <div class="toast-title">{{toastTitle}}</div>
+                <div class="toast-btn">
+                    <div class="toast-cancel" @click="closeToast">关闭</div>
+                </div>
+            </div>
+        </div>
+
+        <el-dialog title="修改奖品" :visible.sync="showDialog" width="80%">
+            <el-row v-for="(item,index) in formData.prizes" :key="index" :gutter="20" style="margin-bottom:20px;">
+                <h3>奖品{{index+1}}</h3>
+                <div style="display: flex;align-items: center;margin-bottom: 10px;">
+                    <div style="width: 80px;">奖品名称：</div>
+                    <el-input v-model="item.name" size="mini" style="flex:1;" clearable></el-input>
+                </div>
+                <div style="display: flex;align-items: center;" v-if="item.fileList">
+                    <span style="width: 80px;">奖品图片：</span>
+                    <el-upload action="#" :auto-upload="false" list-type="picture-card" :file-list="item.fileList" :on-change="file=>onFileChange(index,file)" :on-remove="file=>onFileRemove(index)">
+                        <i class="el-icon-plus"></i>
+                    </el-upload>
+                </div>
+            </el-row>
+            <div slot="footer">
+                <el-button size="mini" @click="showDialog = false">取 消</el-button>
+                <el-button size="mini" type="primary" @click="onConfirmClick">确 定</el-button>
+            </div>
+
+        </el-dialog>
+    </div>
+</body>
+<script>
+    const config = {
+        // 总旋转时间
+        duration: 4000,
+        // 旋转圈数
+        circle: 8,
+        prizeList: [{
+            icon: "./img/bean_500.png", // 奖品图片
+            name: "其他奖品", // 奖品名称
+            isPrize: true // 该奖项是否为奖品
+        }, {
+            icon: "./img/xiangyan.jpg",
+            name: "香烟",
+            isPrize: true
+        }, {
+            icon: "./img/bean_500.png",
+            name: "其他奖品",
+            isPrize: true
+        }, {
+            icon: "./img/chabei.jpg",
+            name: "茶杯",
+            isPrize: true
+        }, {
+            icon: "./img/bean_500.png",
+            name: "其他奖品",
+            isPrize: true
+        }, {
+            icon: "./img/chaju.jpg",
+            name: "茶具",
+            isPrize: true
+        }, {
+            icon: "./img/bean_500.png",
+            name: "其他奖品",
+            isPrize: true
+        }, {
+            icon: "./img/hongbao.jpg",
+            name: "红包🧧",
+            isPrize: false
+        }, ]
+    }
+    var app = new Vue({
+        el: '#app',
+        data: {
+            count: 9999, // 剩余抽奖次数
+            prizeList: [], // 奖品列表
+            angleList: [], // 奖品角度
+            rotateAngle: 0, // 转盘旋转角度
+            currentPrize: null,
+            isRotating: false,
+            showDialog: false,
+            formData: {
+                prizes: [],
+            }
+        },
+        computed: {
+            rotateStyle() {
+                return `
+        -webkit-transition: transform ${config.duration}ms ease-in-out;
+        transition: transform ${config.duration}ms ease-in-out;
+        -webkit-transform: rotate(${this.rotateAngle}deg);
+            transform: rotate(${this.rotateAngle}deg);`
+            },
+            toastTitle() {
+                return this.currentPrize && this.currentPrize.isPrize ?
+                    "恭喜您，获得" +
+                    this.currentPrize.name :
+                    "未中奖";
+            },
+            toastIcon() {
+                return this.currentPrize && this.currentPrize.isPrize ?
+                    "./img/congratulation.png" :
+                    "./img/sorry.png";
+            }
+        },
+        created() {
+            // 获取奖品列表
+            this.getPrizeList();
+            this.initAngleList();
+            this.initFormData();
+        },
+        methods: {
+            getPrizeList() {
+                // 这里可以发起请求，从服务端获取奖品列表
+                // 这里使用模拟数据
+                const storagePrizeList = window.localStorage.getItem("prizeList");
+                if (storagePrizeList) {
+                    this.prizeList = JSON.parse(storagePrizeList);
+                } else {
+                    this.prizeList = config.prizeList;
+                }
+            },
+            // 格式化奖品列表，计算每个奖品的位置
+            initAngleList() {
+                // 记录每个奖的位置
+                this.angleList = []
+
+                const l = this.prizeList.length
+                    // 计算单个奖项所占的角度
+                const average = 360 / l
+
+                const half = average / 2
+
+                // 循环计算给每个奖项添加style属性
+                this.prizeList.forEach((item, i) => {
+                    // 每个奖项旋转的位置为 当前 i * 平均值 + 平均值 / 2
+                    const angle = -((i * average) + half)
+                        // 增加 style
+                    item.style = `-webkit-transform: rotate(${angle}deg);
+                      transform: rotate(${angle}deg);`
+
+                    // 记录每个奖项的角度范围
+                    this.angleList.push((i * average) + half)
+                })
+            },
+            initFormData() {
+                this.formData = {
+                    prizes: []
+                };
+
+                this.prizeList.forEach((item, i) => {
+                    this.formData.prizes.push({
+                        name: item.name,
+                        fileList: [{
+                            url: item.icon
+                        }]
+                    });
+
+                })
+            },
+            beginRotate() {
+                // 添加次数校验
+
+                if (this.count === 0) return
+
+                // 开始抽奖
+                // 这里这里向服务端发起请求，得到要获得的奖
+                // 可以返回下标，也可以返回奖品 id，通过查询 奖品列表，最终得到下标
+
+                // 随机获取下标
+                const index = this.random(this.prizeList.length - 1);
+
+                // 减少剩余抽奖次数
+                this.count--;
+
+                // 开始旋转
+                this.rotating(index)
+            },
+            random(max, min = 0) {
+                return parseInt(Math.random() * (max - min + 1) + min)
+            },
+            rotating(index) {
+                if (this.isRotating) return
+
+                this.isRotating = true
+
+                // 计算角度
+                this.rotateAngle =
+                    // 初始角度
+                    this.rotateAngle +
+                    // 多旋转的圈数
+                    config.circle * 360 +
+                    // 奖项的角度
+                    this.angleList[index] -
+                    (this.rotateAngle % 360);
+
+                // 旋转结束后，允许再次触发
+                setTimeout(() => {
+                    this.isRotating = false
+                    this.currentPrize = this.prizeList[index]
+                    console.log(this.currentPrize, index)
+                }, config.duration + 500)
+            },
+            //关闭弹窗
+            closeToast() {
+                this.currentPrize = null;
+            },
+
+
+            /* 表单部分 */
+            onFileChange(index, file) {
+                this.$set(this.formData.prizes[index], "fileList", [file]);
+            },
+            onFileRemove(index) {
+                this.$set(this.formData.prizes[index], "fileList", []);
+            },
+            onConfirmClick() {
+                const prizes = this.formData.prizes;
+                const urls = [];
+                for (let i = 0; i < 8; i++) {
+                    urls.push(undefined);
+                    if (prizes[i] && prizes[i].fileList[0]) {
+                        this.file2DataUrl(prizes[i].fileList[0], url => {
+                            urls[i] = url;
+                        })
+                    } else {
+                        urls[i] = "./img/bean_500.png";
+                    }
+                }
+                const t = setInterval(() => {
+                    if (!urls.includes(undefined)) {
+                        clearInterval(t);
+                        const prizeList = [];
+                        for (let i = 0; i < 8; i++) {
+                            if (prizes[i] && prizes[i].name) {
+                                prizeList.push({
+                                    name: prizes[i].name,
+                                    icon: urls[i],
+                                    isPrize: true
+                                });
+                            } else {
+                                prizeList.push({
+                                    name: "谢谢参与",
+                                    icon: urls[i],
+                                    isPrize: false
+                                });
+                            }
+                        }
+                        try{
+                            window.localStorage.setItem("prizeList", JSON.stringify(prizeList));
+                        }catch(e){
+                            alert("图片太大，无法本地存储，请更换图片");
+                            return;
+                        }
+                        this.getPrizeList();
+                        this.initAngleList();
+                        this.showDialog = false
+                    }
+                }, 100)
+            },
+            file2DataUrl(fileObj, callback) {
+                if (!fileObj) {
+                    callback && callback("");
+                } else if (fileObj.raw) {
+                    try {
+                        const fileReader = new FileReader();
+                        fileReader.onload = function(e) {
+                            callback && callback(e.target.result);
+                        }
+                        fileReader.readAsDataURL(fileObj.raw);
+                    } catch (e) {
+                        callback && callback(fileObj.url)
+                        alert(e);
+                    }
+                } else {
+                    callback && callback(fileObj.url)
+                }
+            },
+        }
+    })
+</script>
+
+</html>
