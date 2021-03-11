@@ -11,17 +11,33 @@
     <script src="./plugin/element/element.js"></script>
 
     <style>
+        body {
+            background: #ffffff;
+        }
+        
         #app {
             font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
         }
         
+        .applets {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+        
+        .applet {
+            width: 33.33%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        
         .title {
             padding: 14px;
-            height: 30px;
+            /* height: 30px; */
             line-height: 30px;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
+            /* white-space: nowrap; */
+            /* text-overflow: ellipsis; */
+            /* overflow: hidden; */
         }
     </style>
 </head>
@@ -33,17 +49,17 @@
                 <h1>小应用</h1>
             </el-header>
             <el-main>
-                <el-row :gutter="20">
-                    <el-col :span="8" v-for="(app, index) in apps" :key="index" style="margin-bottom: 20px;">
+                <div class="applets">
+                    <div class="applet" v-for="(app, index) in apps" :key="index" style="margin-bottom: 20px;">
                         <el-card :body-style="{ padding: '0px' }">
                             <a :href="app.url" style="text-decoration: none;color: black;">
-                                <img :src="app.image" style="width: 100%;">
+                                <img :src="app.image" style="width: 100%;height: 15vw;">
                                 <div class="title">
                                     {{app.title}}
                                 </div>
                             </a>
-                        </el-card>
-                    </el-col>
+                    </div>
+                </div>
                 </el-row>
             </el-main>
         </el-container>
@@ -55,20 +71,20 @@
         el: '#app',
         data: {
             apps: [{
-                title: "【组合】生成多行多列内容的组合结果",
+                title: "生成多行多列内容的组合结果",
                 image: "./img/c.jpg",
                 url: "combine/index.html"
             }, {
-                title: "【π】获取π的第n位",
+                title: "获取π的第n位",
                 image: "./img/pi.jpg",
                 url: "pi/index.html"
             }, {
-                title: "【抽奖】转盘抽奖",
-                image: "./img/c.jpg",
+                title: "转盘抽奖",
+                image: "./wheel/img/lucky_title.png",
                 url: "wheel/index.html"
             }, {
-                title: "【纪念日】我和木小先",
-                image: "./img/pi.jpg",
+                title: "我和木小先的纪念日",
+                image: "./img/wzmxx.png",
                 url: "mxx/index.html"
             }, ]
         },

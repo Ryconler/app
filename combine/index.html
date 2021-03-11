@@ -12,9 +12,14 @@
     <script src="../plugin/element/element.js"></script>
     <script src="../plugin/clipboard/clipboard.js"></script>
     <style>
+        body {
+            background: #ffffff;
+        }
+        
         #app {
             font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
         }
+        
         .el-row {
             margin: 10px 0;
         }
@@ -23,28 +28,24 @@
 
 <body>
     <div id="app">
-        <el-container>
-            <el-header>
-                <h1>生成多行多列内容的组合结果</h1>
-            </el-header>
-            <el-main>
-                <div v-for="(row, rowIndex) of tagData" :key="rowIndex">
-                    <el-tag v-for="(col, colIndex) of row.data" :key="colIndex" :type="tagTypes[rowIndex%5]" @click="onCloseTag(rowIndex, colIndex)">
-                        {{col}}
-                    </el-tag>
-                </div>
-                <el-row>
-                    <el-col v-for="i of inputs" :key="i">
-                        <el-input v-model.trim="inputData[i]" @keyup.enter.native="onClickAdd(i)">
-                            <el-button slot="append" @click="onClickAdd(i)" icon="el-icon-plus"></el-button>
-                        </el-input>
-                    </el-col>
-                </el-row>
-                <el-button v-show="tagData.length>0" @click="onClickGenerate" type="primary">生成数据</el-button>
-                <el-button v-show="result" id="clip-button" :data-clipboard-text="result" type="success">复制数据</el-button>
-                <p v-html="result" style="white-space: pre-wrap;"></p>
-            </el-main>
-        </el-container>
+        <h1>生成多行多列内容的组合结果</h1>
+        <el-main>
+            <div v-for="(row, rowIndex) of tagData" :key="rowIndex">
+                <el-tag v-for="(col, colIndex) of row.data" :key="colIndex" :type="tagTypes[rowIndex%5]" @click="onCloseTag(rowIndex, colIndex)">
+                    {{col}}
+                </el-tag>
+            </div>
+            <el-row>
+                <el-col v-for="i of inputs" :key="i">
+                    <el-input v-model.trim="inputData[i]" @keyup.enter.native="onClickAdd(i)">
+                        <el-button slot="append" @click="onClickAdd(i)" icon="el-icon-plus"></el-button>
+                    </el-input>
+                </el-col>
+            </el-row>
+            <el-button v-show="tagData.length>0" @click="onClickGenerate" type="primary">生成数据</el-button>
+            <el-button v-show="result" id="clip-button" :data-clipboard-text="result" type="success">复制数据</el-button>
+            <p v-html="result" style="white-space: pre-wrap;"></p>
+        </el-main>
     </div>
 </body>
 <script>

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="./index.css">
     <script src="../plugin/vue/vue.js"></script>
     <script src="../plugin/element/element.js"></script>
+    <script src="../plugin/jquery/jquery.js"></script>
 
     <style>
         .el-upload--picture-card,
@@ -25,6 +26,10 @@
     <div id="app">
         <div class="operate">
             <el-button type="danger" icon="el-icon-goods" circle @click="showDialog=true;"></el-button>
+        </div>
+
+        <div class="title">
+            <img src="./img/lucky_title.png" alt="幸运大转盘">
         </div>
 
         <div class="wheel">
@@ -125,7 +130,8 @@
             showDialog: false,
             formData: {
                 prizes: [],
-            }
+            },
+            usernmae: ""
         },
         computed: {
             rotateStyle() {
@@ -154,15 +160,44 @@
             this.initFormData();
         },
         methods: {
+            getQueryVariable(variable) {
+                const query = window.location.search.substring(1);
+                const vars = query.split("&");
+                for (let i = 0; i < vars.length; i++) {
+                    let pair = vars[i].split("=");
+                    if (pair[0] == variable) {
+                        return pair[1];
+                    }
+                }
+                return "";
+            },
             getPrizeList() {
+                this.prizeList = config.prizeList;
+                this.userName = this.getQueryVariable("userName") || window.prompt("输入您的大名，获取您之前设置的，没有就点取消", "");
+                if (!this.userName) {
+                    const storagePrizeList = window.localStorage.getItem("prizeList");
+                    if (storagePrizeList) {
+                        this.prizeList = JSON.parse(storagePrizeList);
+                    }
+                } else {
+                    const url = `http://localhost:9002/ucenter/custom_prize/list?userName=${this.userName}`
+                    $.get(url, data => {
+                        if (data.result && data.result.length > 0) {
+                            this.prizeList = data.result;
+                        } else {
+                            const storagePrizeList = window.localStorage.getItem("prizeList");
+                            if (storagePrizeList) {
+                                this.prizeList = JSON.parse(storagePrizeList);
+                            }
+                        }
+                    });
+                }
+
+
                 // 这里可以发起请求，从服务端获取奖品列表
                 // 这里使用模拟数据
-                const storagePrizeList = window.localStorage.getItem("prizeList");
-                if (storagePrizeList) {
-                    this.prizeList = JSON.parse(storagePrizeList);
-                } else {
-                    this.prizeList = config.prizeList;
-                }
+
+
             },
             // 格式化奖品列表，计算每个奖品的位置
             initAngleList() {
