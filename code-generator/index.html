@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码生成器</title>
+    <link rel="stylesheet" href="../plugin/element/element.css">
+    <link rel="stylesheet" href="../plugin/normalize/normalize.min.css">
+    <script src="../plugin/vue/vue.js"></script>
+    <script src="../plugin/element/element.js"></script>
+    <script src="../plugin/clipboard/clipboard.js"></script>
+    <script src="../plugin/jquery/jquery.js"></script>
+    <style>
+        body {
+            background: #ffffff;
+            min-width: 1200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-main>
+            <h1>代码生成器</h1>
+            <el-form ref="elForm" :model="formData" label-width="80px">
+                <el-form-item label="实体名称">
+                    <el-input v-model="formData.name" placeholder="输入实体名称，如：User、BaseContent"></el-input>
+                </el-form-item>
+                <el-row v-for="(item,index) in formData.fields" :keys="index">
+                    <el-col :span="8">
+                        <el-form-item label="属性名称">
+                            <el-input v-model="item.name" placeholder="输入属性名称，如：name、validTime"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="4">
+                        <el-form-item label="属性类型">
+                            <el-select v-model="item.type" placeholder="请选择类型" style="width: 100%;">
+                                <el-option label="String" value="String"></el-option>
+                                <el-option label="Date" value="Date"></el-option>
+                                <el-option label="Boolean" value="Boolean"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="属性描述">
+                            <el-input v-model="item.description" placeholder="输入属性描述，如：姓名、生效时间"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="2">
+                        <el-form-item label="允许为空">
+                            <el-checkbox v-model="item.allowNull"></el-checkbox>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="2">
+                        <el-button type="danger" icon="el-icon-delete" circle v-if="index>0" @click="onFieldDelClick(index)"></el-button>
+                    </el-col>
+                </el-row>
+                <el-button type="primary" icon="el-icon-plus" @click="onFieldAddClick">新增属性</el-button>
+            </el-form>
+            <h2>增删改查代码生成</h2>
+            <el-row>
+                <el-col :span="12">
+                    <h3>基于Vue、Element的前端页面代码
+                        <el-button type="primary" @click="onVueClick" v-loading="isLoading">生成</el-button>
+                    </h3>
+                </el-col>
+                <el-col :span="12">
+                    <h3>基于SpringBoot的后端接口代码
+                        <el-button type="primary" @click="onSpringClick" v-loading="isLoading">生成</el-button>
+                    </h3>
+                </el-col>
+            </el-row>
+            <div v-if="tableData.length>0">
+                <h2>生成结果</h2>
+                <el-table :data="tableData" style="width: 100%">
+                    <el-table-column prop="fileName" label="文件名称" width="200" show-overflow-tooltip>
+                        <template slot-scope="scope">
+                      {{scope.row.filePath|fileName}}
+                    </template>
+                    </el-table-column>
+                    <el-table-column prop="fileContent" label="文件内容">
+                        <template slot-scope="scope">
+                        <el-input type="textarea" :rows="10" readonly v-model="scope.row.fileContent">
+                        </el-input>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="下载" width="80">
+                        <template slot-scope="scope">
+                        <a :href="`${baseUrl}/generate/download/${scope.row.filePath}`" download target="_blank">下载</a>
+                      </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+        </el-main>
+    </div>
+</body>
+<script>
+    // const baseUrl = "http://localhost:9010/code";
+    const baseUrl = "//www.wzmxx.com/code";
+    var app = new Vue({
+        el: '#app',
+        data: {
+            baseUrl: baseUrl,
+            formData: {
+                name: "",
+                fields: [{
+                    name: "",
+                    type: "",
+                    description: "",
+                    allowNull: false
+                }]
+            },
+            tableData: [],
+            isLoading: false,
+            clip: null
+        },
+        filters: {
+            fileName(val) {
+                if (!val) {
+                    return "";
+                }
+                const arr = val.split("/");
+                return arr[arr.length - 1];
+            }
+        },
+        computed: {},
+        mounted() {},
+        methods: {
+            onFieldAddClick() {
+                this.formData.fields.push({
+                    name: "",
+                    type: "",
+                    allowNull: true
+                })
+            },
+            onFieldDelClick(index) {
+                this.formData.fields.splice(index, 1);
+            },
+            validForm() {
+                if (!this.formData.name) {
+                    this.$notify.error({
+                        title: '错误',
+                        message: '实体名称不能为空'
+                    });
+                    return false
+                }
+                for (const field of this.formData.fields) {
+                    if (!field.name) {
+                        this.$notify.error({
+                            title: '错误',
+                            message: '每个属性名称都不能为空'
+                        });
+                        return false
+                    }
+                    if (!field.type) {
+                        this.$notify.error({
+                            title: '错误',
+                            message: '每个属性类型都不能为空'
+                        });
+                        return false
+                    }
+                    if (!field.description) {
+                        this.$notify.error({
+                            title: '错误',
+                            message: '每个属性描述都不能为空'
+                        });
+                        return false
+                    }
+                }
+                return true
+            },
+            onVueClick() {
+                if (this.validForm()) {
+                    this.generate(`${baseUrl}/generate/vue`);
+                }
+            },
+            onSpringClick() {
+                if (this.validForm()) {
+                    this.generate(`${baseUrl}/generate/spring`);
+                }
+            },
+            generate(url) {
+                this.isLoading = true;
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: JSON.stringify(this.formData),
+                    contentType: "application/json",
+                    dataType: "json",
+                    success: data => {
+                        this.tableData = data
+                        this.isLoading = false;
+                    },
+                    error: (error) => {
+                        this.$notify.error({
+                            title: '错误',
+                            message: error
+                        });
+                        this.isLoading = false;
+                    }
+                });
+            },
+        },
+    })
+</script>
+
+</html>
